@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Darts Checkout Helper</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111827;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .card {
+      background: #1f2937;
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 0.75rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #9ca3af;
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #374151;
+      background: #030712;
+      color: #f9fafb;
+      box-sizing: border-box;
+      font-size: 0.95rem;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 1px #3b82f6;
+    }
+
+    button {
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      border: none;
+      background: #3b82f6;
+      color: #f9fafb;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .result {
+      margin-top: 1rem;
+      padding: 0.75rem 0.9rem;
+      border-radius: 8px;
+      background: #020617;
+      border: 1px solid #4b5563;
+      font-size: 0.95rem;
+      min-height: 2.4rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .result-title {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-top: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Darts Checkout Helper</h1>
+    <div class="subtitle">
+      Enter a score between 2 and 170, click suggest, or press Enter.
+    </div>
+
+    <label for="scoreInput">Score</label>
+    <input type="number" id="scoreInput" min="0" max="500" placeholder="e.g. 170">
+
+    <button id="suggestButton">Suggest checkout</button>
+
+    <div class="result" id="resultBox">
+      Enter a score to get a suggestion.
+    </div>
+
+    <div class="hint">
+      Example checkouts, 170 → T20 . T20 . DBULL, 167 → T20 . T19 . DBULL.
+    </div>
+  </div>
+
+  <script>
+    // ========== Darts logic ==========
+
+    /**
+     * Dart is { name: string, value: number }
+     */
+
+    function generateDartOptions() {
+      const darts = [];
+
+      // Singles 1 to 20
+      for (let n = 1; n <= 20; n++) {
+        darts.push({ name: "S" + n, value: n });
+      }
+
+      // Single bull 25
+      darts.push({ name: "SBULL", value: 25 });
+
+      // Doubles 1 to 20
+      for (let n = 1; n <= 20; n++) {
+        darts.push({ name: "D" + n, value: 2 * n });
+      }
+
+      // Double bull 50
+      darts.push({ name: "DBULL", value: 50 });
+
+      // Triples 1 to 20
+      for (let n = 1; n <= 20; n++) {
+        darts.push({ name: "T" + n, value: 3 * n });
+      }
+
+      // Sort high to low for nicer suggestions
+      darts.sort((a, b) => b.value - a.value);
+      return darts;
+    }
+
+    const ALL_DARTS = generateDartOptions();
+
+    function isDouble(dart) {
+      // Treat any D* and DBULL and value 50 as double finishes
+      return dart.name.startsWith("D") || dart.name === "DBULL" || dart.value === 50;
+    }
+
+    function oneDartFinish(score) {
+      for (const dart of ALL_DARTS) {
+        if (dart.value === score && isDouble(dart)) {
+          return [dart];
+        }
+      }
+      return null;
+    }
+
+    function twoDartFinish(score) {
+      for (const first of ALL_DARTS) {
+        const remaining = score - first.value;
+        if (remaining <= 1) continue;
+        const last = oneDartFinish(remaining);
+        if (last) {
+          return [first].concat(last);
+        }
+      }
+      return null;
+    }
+
+    function threeDartFinish(score) {
+      for (const first of ALL_DARTS) {
+        const remAfterFirst = score - first.value;
+        if (remAfterFirst <= 1) continue;
+
+        for (const second of ALL_DARTS) {
+          const remAfterSecond = remAfterFirst - second.value;
+          if (remAfterSecond <= 1) continue;
+
+          const last = oneDartFinish(remAfterSecond);
+          if (last) {
+            return [first, second].concat(last);
+          }
+        }
+      }
+      return null;
+    }
+
+    function suggestCheckout(score) {
+      if (score < 2 || score > 170) return null;
+
+      const candidates = [oneDartFinish, twoDartFinish, threeDartFinish];
+      for (const fn of candidates) {
+        const res = fn(score);
+        if (res) return res;
+      }
+      return null;
+    }
+
+    function formatCheckout(checkout) {
+      const parts = checkout.map(d => d.name);
+      const total = checkout.reduce((sum, d) => sum + d.value, 0);
+      return parts.join(" . ") + "  (total " + total + ")";
+    }
+
+    // ========== DOM wiring ==========
+
+    const scoreInput = document.getElementById("scoreInput");
+    const suggestButton = document.getElementById("suggestButton");
+    const resultBox = document.getElementById("resultBox");
+
+    function showMessage(msg) {
+      resultBox.textContent = msg;
+    }
+
+    function handleSuggest() {
+      const raw = scoreInput.value.trim();
+
+      if (raw === "") {
+        showMessage("Please enter a score.");
+        return;
+      }
+
+      const score = Number(raw);
+
+      if (!Number.isInteger(score) || Number.isNaN(score)) {
+        showMessage("Please enter a whole number like 40 or 170.");
+        return;
+      }
+
+      const suggestion = suggestCheckout(score);
+
+      if (!suggestion) {
+        if (score <= 1) {
+          showMessage("You cannot finish from this score, you should never be on 1.");
+        } else if (score > 170) {
+          showMessage("No standard 3 dart checkout above 170.");
+        } else {
+          showMessage("No standard checkout found, set up a better finish.");
+        }
+      } else {
+        showMessage(formatCheckout(suggestion));
+      }
+    }
+
+    suggestButton.addEventListener("click", handleSuggest);
+
+    scoreInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        handleSuggest();
+      }
+    });
+
+    // Optional, prefill a common score so you can spam refresh and test
+    // scoreInput.value = "170";
+  </script>
+</body>
+</html>
