@@ -9,6 +9,7 @@ A comprehensive darts checkout calculator that suggests optimal finishing combin
 - **Complete coverage** – Handles all possible scores from 2 to 170
 - **Multiple interfaces** – Choose between CLI, desktop GUI, or web-based versions
 - **Mobile-optimised** – Responsive web interface for use at the oche
+- **Installable PWA** – Add it to your home screen and use it offline, no app store required
 
 ## Available Interfaces
 
@@ -29,8 +30,8 @@ python darts-gui.py
 ### Web Interface (`darts-web.html`)
 A web-based calculator with a dark theme, perfect for desktop browsers. Simply open the HTML file in any modern browser – no server required.
 
-### Mobile Interface (`darts-mobile.html`)
-A mobile-optimised version with touch-friendly controls and large buttons. Open in your phone's browser for easy access during practice or matches.
+### Progressive Web App (`index.html`)
+A mobile-optimised, installable PWA with touch-friendly controls and large buttons. Works offline once installed, and can be added to your phone's home screen for one-tap access during practice or matches. See [Installing as a PWA](#installing-as-a-pwa) below.
 
 ## How It Works
 
@@ -99,6 +100,33 @@ No standard checkout found. Set up a better finish.
    ```
 
 3. No additional dependencies required – everything uses Python standard library and vanilla JavaScript.
+
+## Installing as a PWA
+
+`index.html` is a full Progressive Web App: it ships a [web app manifest](manifest.json) and a [service worker](sw.js) that caches the app shell, so once it's loaded once it keeps working with no signal – handy for scoring darts in a shed with no wifi.
+
+The service worker uses relative URLs, so it must be served over HTTP(S) rather than opened as a `file://` path. Locally, that's:
+
+```bash
+python -m http.server 8000
+# then open http://localhost:8000/ in a browser
+```
+
+Or host `index.html`, `manifest.json`, `sw.js`, and the `icons/` folder together on any static host (GitHub Pages, Netlify, etc.).
+
+### Desktop (Chrome / Edge)
+1. Open the site.
+2. Click the install icon in the address bar (or menu → **Install Darts Checkout Calculator**).
+
+### Android (Chrome)
+1. Open the site.
+2. Tap the menu (⋮) → **Add to Home screen** / **Install app**.
+
+### iOS (Safari)
+1. Open the site.
+2. Tap the Share icon → **Add to Home Screen**.
+
+Once installed it launches full-screen, without browser chrome, and keeps working offline after the first load.
 
 ## Technical Details
 

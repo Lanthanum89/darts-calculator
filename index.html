@@ -3,7 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Darts Checkout Helper</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Suggests optimal darts checkout finishes for any score from 2 to 170.">
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#3b82f6">
+
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Darts Checkout">
 
   <style>
     :root {
@@ -303,6 +313,16 @@
     window.addEventListener("load", () => {
       scoreInput.focus();
     });
+
+    // ========== PWA service worker ==========
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch((err) => {
+          console.error("Service worker registration failed:", err);
+        });
+      });
+    }
   </script>
 </body>
 </html>
