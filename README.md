@@ -27,11 +27,11 @@ A Tkinter-based graphical interface with a clean, modern design.
 python darts-gui.py
 ```
 
-### Web Interface (`darts-web.html`)
+### Web Interface (`public/darts-web.html`)
 A web-based calculator with a dark theme, perfect for desktop browsers. Simply open the HTML file in any modern browser – no server required.
 
-### Progressive Web App (`index.html`)
-A mobile-optimised, installable PWA with touch-friendly controls and large buttons. Works offline once installed, and can be added to your phone's home screen for one-tap access during practice or matches. See [Installing as a PWA](#installing-as-a-pwa) below.
+### Progressive Web App (`index.html` / `src/`)
+A mobile-optimised, installable PWA – built with TypeScript and Vite – with an on-screen keypad, colour-coded dart chips, and recent-lookup history. Works offline once installed, and can be added to your phone's home screen for one-tap access during practice or matches. See [Installing as a PWA](#installing-as-a-pwa) below.
 
 ## How It Works
 
@@ -83,8 +83,8 @@ No standard checkout found. Set up a better finish.
 
 ### Web Interfaces
 - Any modern web browser (Chrome, Firefox, Safari, Edge)
-- No internet connection required
-- No installation needed
+- No internet connection required to use the deployed site
+- Building the PWA from source requires [Node.js](https://nodejs.org/) 20+
 
 ## Installation
 
@@ -99,20 +99,28 @@ No standard checkout found. Set up a better finish.
    python --version
    ```
 
-3. No additional dependencies required – everything uses Python standard library and vanilla JavaScript.
+3. For the PWA (`index.html` / `src/`), install Node dependencies:
+   ```bash
+   npm install
+   ```
+
+No other dependencies are required – the Python interfaces use only the standard library, and `public/darts-web.html` is plain HTML/CSS/JS.
+
+## Developing the PWA
+
+```bash
+npm install
+npm run dev       # local dev server with hot reload
+npm test          # run the checkout-logic unit tests (vitest)
+npm run build     # type-check and produce a production build in dist/
+npm run preview   # serve the production build locally
+```
 
 ## Installing as a PWA
 
-`index.html` is a full Progressive Web App: it ships a [web app manifest](manifest.json) and a [service worker](sw.js) that caches the app shell, so once it's loaded once it keeps working with no signal – handy for scoring darts in a shed with no wifi.
+The deployed PWA ships a web app manifest and a service worker (both generated at build time by [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/) from `vite.config.ts`) that cache the app shell, so once it's loaded once it keeps working with no signal – handy for scoring darts in a shed with no wifi.
 
-The service worker uses relative URLs, so it must be served over HTTP(S) rather than opened as a `file://` path. Locally, that's:
-
-```bash
-python -m http.server 8000
-# then open http://localhost:8000/ in a browser
-```
-
-Or host `index.html`, `manifest.json`, `sw.js`, and the `icons/` folder together on any static host (GitHub Pages, Netlify, etc.).
+Just visiting the deployed site is enough to install it – no build step needed on your end. To try it locally instead, `npm run build && npm run preview` (the service worker needs HTTP(S), so it won't register from a `file://` path or straight from `npm run dev`'s HMR server).
 
 ### Desktop (Chrome / Edge)
 1. Open the site.
@@ -127,6 +135,10 @@ Or host `index.html`, `manifest.json`, `sw.js`, and the `icons/` folder together
 2. Tap the Share icon → **Add to Home Screen**.
 
 Once installed it launches full-screen, without browser chrome, and keeps working offline after the first load.
+
+## Deployment
+
+The PWA deploys to GitHub Pages via the [`deploy.yml`](.github/workflows/deploy.yml) GitHub Actions workflow: every push to `main` runs the test suite, builds the site, and publishes `dist/` (which also includes `public/darts-web.html`, carried through unchanged). In the repo's **Settings → Pages**, the source must be set to **GitHub Actions** rather than "Deploy from a branch".
 
 ## Technical Details
 
